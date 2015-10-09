@@ -26,7 +26,6 @@ function requestHandler(req, res) {
 			//POST
 			case('backendDB.php'):
 			case('/'):
-			console.log("cat");
 				req.on('data', function(chunk){
 					ajaxRequestHandler(chunk, req, res);
 				});
@@ -234,7 +233,7 @@ function getChatIds(data, req, res, id) {
 	});
 }
 
-function getChatDataByChatIDValidate(res, chatID, userID, successCallback) {
+function getChatDataByChatIDValidate(res, userID, chatID,successCallback) {
 	getChatDataByChatID(chatID, function(error, rows){
 		//Database query error
 		if(error) {
@@ -265,7 +264,7 @@ function loadMessagesFromFile(filePath, start, end, callback) {
 				messages.push(line);
 			}
 			lineNum += 1;
-			if(last) {
+			if(last || lineNum >= end) {
 				callback(messages);
 			}
 		});
@@ -294,7 +293,7 @@ function prepRetrieveLastNMessages(data, req, res, id) {
 }
 
 function retrieveLastNMessages(res, userID, chatID, numMessages) {
-	getChatDataByChatIDValidate(chatID, function(chatData) {
+	getChatDataByChatIDValidate(res, userID, chatID, function(chatData) {
 		//Get last N messages. If less messages than requests, get all
 		var start = chatData['num_messages'] - numMessages;
 		var end = chatData['num_messages'];
@@ -316,7 +315,7 @@ function prepGetMessageRange(data, req, res, id) {
 }
 
 function getMessageRange(res, userID, chatID, begin, end){
-	getChatDataByChatIDValidate(res, chatID, userID, function(chatData){
+	getChatDataByChatIDValidate(res, userID, chatID, function(chatData){
 		var filePath = getChatFilePath(chatID);
 		replyWithMessagesFromFile(res, filePath, begin, end);
 	});
@@ -328,11 +327,6 @@ function getChatDataByChatID(chatID, callback) {
 		callback(error, rows);
 	});
 }
-
-
-
-
-
 
 function login(data, req, res) {
 	console.log("user logging in");

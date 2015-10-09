@@ -320,7 +320,7 @@ function createChatSucccess(json) {
 
 //</editor-fold>
 
-// </editor-fold>
+// </editor-fold>   
 
 // <editor-fold defaultstate="collapsed" desc="Old Code">
 

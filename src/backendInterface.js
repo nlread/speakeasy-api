@@ -73,6 +73,31 @@ function getInitialMessages(chatID, numMessages, callback) {
 
 //</editor-fold>
 
+// <editor-fold defaultstate="collapsed" desc="Get Message Range">
+
+function getMessageRange(chatID, beginIndex, endIndex, callback) {
+    console.log("gettig messages from " + beginIndex + " to " + endIndex + " for " + chatID);
+    $.ajax({
+       type: "POST",
+       url: "/",
+       data: {
+           'function': 'chat:retrieve:range',
+           'token': token,
+           'chatID': chatID,
+           'begin': beginIndex,
+           'end': endIndex
+       },
+       dataType: "json",
+       success: function(json) {
+           var data = convertToObject(json);
+           if(data.success)
+               callback(data.success, data.response, data.messages);
+           else
+               callback(data.success, data.error, null);
+       }
+    });
+}
+// </editor-fold>
 //</editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="Utility Functions">
