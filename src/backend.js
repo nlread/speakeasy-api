@@ -257,16 +257,19 @@ function getChatDataByChatIDValidate(res, userID, chatID,successCallback) {
 }
 
 function loadMessagesFromFile(filePath, start, end, callback) {
-	var lineNum = 0;
+	var lineNum = 1;
 	var messages = [];
+	console.log("start: " + start + " end: " + end);
 	lineReader.eachLine(filePath, function(line, last) {
-			if(lineNum >= start) {
+			console.log(lineNum);
+			if(lineNum >= start && lineNum <= end) {
 				messages.push(line);
 			}
-			lineNum += 1;
 			if(last || lineNum >= end) {
 				callback(messages);
+				return false;
 			}
+			lineNum += 1;
 		});
 }
 
@@ -295,7 +298,7 @@ function prepRetrieveLastNMessages(data, req, res, id) {
 function retrieveLastNMessages(res, userID, chatID, numMessages) {
 	getChatDataByChatIDValidate(res, userID, chatID, function(chatData) {
 		//Get last N messages. If less messages than requests, get all
-		var start = chatData['num_messages'] - numMessages;
+		var start = chatData['num_messages'] - numMessages + 1;
 		var end = chatData['num_messages'];
 		var filePath = getChatFilePath(chatID);
 		replyWithMessagesFromFile(res, filePath, start, end);

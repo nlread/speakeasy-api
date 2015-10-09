@@ -88,8 +88,6 @@ function loadMoreMessages(numMessages) {
     var begin = minIndex - numMessages - 1;
     var end = minIndex - 1;
     getMessageRange(currentChatId, begin, end, function (success, info, messages) {
-        console.log(messages);
-        console.log(JSON.parse(messages[0]));
         if (!success) {
             console.log("error loading more messages : " + info);
             return;
@@ -104,6 +102,8 @@ function loadMoreMessages(numMessages) {
             chatArea.appendChild(messageDiv);
         }
         chatArea.innerHTML += oldMessages;
+        
+        minIndex = JSON.parse(messages[0]).index;
     });
 }
 
