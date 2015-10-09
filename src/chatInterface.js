@@ -28,6 +28,11 @@ function login(email, password) {
     });
 }
 
+/**
+ * Changes login status to match result of login attempt
+ * (Logged in email or error)
+ * @param {Object or String} json Converted to object if not already so
+ */
 function loginSuccess(json) {
     var data = convertToObject(json);
     var emailLoginStatusAreaParagraph = document.getElementById('loginStatusAreaParagraph');
@@ -38,9 +43,9 @@ function loginSuccess(json) {
     } else {
         emailLoginStatusAreaParagraph.innerHTML = "Error logging in";
     }
-    console.log(data);
 }
 //</editor-fold>
+
 // <editor-fold defaultstate="collapsed" desc="Get Chat IDs">
 /**
  * Gather data and execute pre-request functions

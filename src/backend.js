@@ -20,11 +20,13 @@ server.listen(1337);
  * Handle requests to the server
  */
 function requestHandler(req, res) {
-	console.log("request recieved");
+	console.log("request recieved | " + req.method + " | " + req.url);
 	if(req.method === "POST") {
 		switch(req.url) {
 			//POST
+			case('backendDB.php'):
 			case('/'):
+			console.log("cat");
 				req.on('data', function(chunk){
 					ajaxRequestHandler(chunk, req, res);
 				});
@@ -52,6 +54,12 @@ function serveChatroomHTML(req, res) {
 			break;
 		case('/chatInterface.js'):
 			filename = "chatInterface.js";
+			break;
+		case('/controller.js'):
+			filename = "controller.js";
+			break;
+		case('/backendInterface.js'):
+			filename = "backendInterface.js";
 			break;
 	}
 	fs.readFile(filename, function(err, data) {
@@ -83,6 +91,7 @@ function ajaxRequestHandler(chunk, req, res) {
 		return;
 	} 
 	
+	console.log(data.function);
 	if (data.function === 'profile:info:chats') {
 		executeSecureFunction(data, req, res,prepGetChatIDs);
 	} else if (data.function === 'chat:retrieve:last') {
@@ -197,6 +206,7 @@ function prepGetChatIDs(data, req, res, id) {
  * Query database for chatIDs
  */
 function getChatIds(data, req, res, id) {
+	console.log("getting chat ids");
 	//Fetch chat id's for given user id from database
 	var query = "SELECT `chat_id` FROM `chats` WHERE `user_one` = '" + id + "' OR `user_two` = '" + id + "'";	
 	conn.query(query, function(error, rows, fields) {
@@ -215,6 +225,7 @@ function getChatIds(data, req, res, id) {
 			log['success'] = true;
 			log['response'] = "chat ids retrieved";
 			log['chatIDs'] = chatIDs;
+			console.log(chatIDs);
 			res.end(JSON.stringify(log));
 			return; 
 		}
