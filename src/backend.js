@@ -96,6 +96,8 @@ function ajaxRequestHandler(chunk, req, res) {
 		executeSecureFunction(data, req, res,prepGetChatIDs);
 	} else if (data.function === 'chat:retrieve:last') {
 		executeSecureFunction(data, req, res, prepRetrieveLastNMessages);
+	} else if (data.function === 'chat:retrieve:range') {
+		executeSecureFunction(data, req, res, prepGetMessageRange)
 	} else if(data.function === 'chat:send:message') {
 		executeSecureFunction(data, req, res, prepSendMessage);
 	} else if (data.funciton === 'login') {
@@ -173,7 +175,7 @@ function prepSendMessage(data, req, res, id) {
 }
 
 function sendMessage(res, userID, message, chatID) {
-	getChatDataByChatID(res, chatID, function(error, rows) {
+	getChatDataByChatID(chatID, function(error, rows) {
 		if(error) {
 			replyDatabaseError(res);
 			return;
@@ -232,19 +234,8 @@ function getChatIds(data, req, res, id) {
 	});
 }
 
-function prepRetrieveLastNMessages(data, req, res, id) {
-	if(!isRequiredSet(data, ['chatID','numMessages'])) {
-		replyMissingInputs(res);
-		return;
-	}
-	
-	var chatID = data['chatID'];
-	var numMessages = data['numMessages'];
-	retrieveLastNMessages(res, id, chatID, numMessages)
-}
-
-function retrieveLastNMessages(res, userID, chatID, numMessages) {
-	getChatDataByChatID(res, chatID, function(error, rows) {
+function getChatDataByChatIDValidate(res, chatID, userID, successCallback) {
+	getChatDataByChatID(chatID, function(error, rows){
 		//Database query error
 		if(error) {
 			replyDatabaseError(res);
@@ -262,29 +253,76 @@ function retrieveLastNMessages(res, userID, chatID, numMessages) {
 			return;
 		}
 		
-		//Get last N messages. If less messages than requests, get all
-		var start = chatData['num_messages'] - numMessages;
-		var messages = [];
-		var lineNum = 0;
-		lineReader.eachLine(getChatFilePath(chatID), function(line, last) {
+		successCallback(chatData);
+	});
+}
+
+function loadMessagesFromFile(filePath, start, end, callback) {
+	var lineNum = 0;
+	var messages = [];
+	lineReader.eachLine(filePath, function(line, last) {
 			if(lineNum >= start) {
 				messages.push(line);
 			}
 			lineNum += 1;
 			if(last) {
-				//Build reply and send
-				var log = {};
-				log['success'] = true;
-				log['messages'] = messages;
-				log['response'] = "retrieved messages";
-				res.end(JSON.stringify(log));
+				callback(messages);
 			}
 		});
-		
+}
+
+function replyWithMessagesFromFile(res, filePath, start, end) {
+	loadMessagesFromFile(filePath, start, end, function(messages) {
+		//Build reply and send
+		var log = {};
+		log['success'] = true;
+		log['messages'] = messages;
+		log['response'] = "retrieved messages";
+		res.end(JSON.stringify(log));
+	})
+}
+
+function prepRetrieveLastNMessages(data, req, res, id) {
+	if(!isRequiredSet(data, ['chatID','numMessages'])) {
+		replyMissingInputs(res);
+		return;
+	}
+	
+	var chatID = data['chatID'];
+	var numMessages = data['numMessages'];
+	retrieveLastNMessages(res, id, chatID, numMessages)
+}
+
+function retrieveLastNMessages(res, userID, chatID, numMessages) {
+	getChatDataByChatIDValidate(chatID, function(chatData) {
+		//Get last N messages. If less messages than requests, get all
+		var start = chatData['num_messages'] - numMessages;
+		var end = chatData['num_messages'];
+		var filePath = getChatFilePath(chatID);
+		replyWithMessagesFromFile(res, filePath, start, end);
 	});
 }
 
-function getChatDataByChatID(res, chatID, callback) {
+function prepGetMessageRange(data, req, res, id) {
+	if(!isRequiredSet(data, ['chatID', 'begin', 'end'])) {
+		replyMissingInputs(res);
+		return;
+	}
+	
+	var chatID = data['chatID'];
+	var begin = data['begin'];
+	var end = data['end'];
+	getMessageRange(res, id, chatID, begin, end);
+}
+
+function getMessageRange(res, userID, chatID, begin, end){
+	getChatDataByChatIDValidate(res, chatID, userID, function(chatData){
+		var filePath = getChatFilePath(chatID);
+		replyWithMessagesFromFile(res, filePath, begin, end);
+	});
+}
+
+function getChatDataByChatID(chatID, callback) {
 	var query = "SELECT * FROM `chats` WHERE `chat_id` = '" + chatID + "' LIMIT 1";
 	conn.query(query, function(error, rows, fields) {
 		callback(error, rows);

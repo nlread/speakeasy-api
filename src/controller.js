@@ -9,6 +9,7 @@ var chats;
 var loggedInEmail;
 var token;
 var currentChatId;
+var messages;
 
 function init() {
    if(token === undefined) {
@@ -58,14 +59,16 @@ function chatSelected() {
 
 function loadChat(chatId) {
     console.log("loading chat: " + chatId);
-    clearChatArea();
+    //clearChatArea();
     currentChatId = chatId;
+    messages = {};
     getInitialMessages(chatId, 15, function(success, info, messages) {
         if(success) {
             var chatArea = document.getElementById(chatAreaId);
             for(var i=0; i < messages.length; i++) {
                 var messageDiv = document.createElement("div");
                 var message = JSON.parse(messages[i]);
+                messages[message.index] = message;
                 messageDiv.innerHTML = message.sender + ": " + message.message;
                 chatArea.appendChild(messageDiv);
             }
@@ -73,6 +76,10 @@ function loadChat(chatId) {
             console.log("Unable to load messages: " + info);
         }
     });
+}
+
+function loadMoreMessages(numMessages) {
+        
 }
 
 function bindChatSelectMenu(chatIds) {
