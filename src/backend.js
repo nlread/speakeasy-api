@@ -21,7 +21,7 @@ server.listen(1337);
  */
 function requestHandler(req, res) {
 	console.log("request recieved");
-	if(req.method == "POST") {
+	if(req.method === "POST") {
 		switch(req.url) {
 			//POST
 			case('/'):

@@ -1,13 +1,46 @@
 var instance;
 var token;
+var loggedInEmail;
 var currentState = 0;
 var selectedChatID;
-function passToken(token1) {
-    token = token1;
-}
+
 
 // <editor-fold defaultstate="collapsed" desc="Normal Functions">
+// <editor-fold defaultstate="collapsed" desc="Login">
+function prepLogin() {
+    console.log("Logging in...");
+    var email = document.getElementById('email').value;
+    var password = document.getElementById('password').value;
+    login(email, password);
+}
+function login(email, password) {
+    console.log("" + email + " " + password);
+    $.ajax({
+        type: "POST", 
+        url: "/",
+        data : {
+            'function' : "login",
+            'email': email,
+            'password' : password
+        },
+        dataType: "json",
+        success: loginSuccess
+    });
+}
 
+function loginSuccess(json) {
+    var data = convertToObject(json);
+    var emailLoginStatusAreaParagraph = document.getElementById('loginStatusAreaParagraph');
+    if(data.success) {
+        loggedInEmail = document.getElementById('email').value;
+        emailLoginStatusAreaParagraph.style.color = "green";
+        emailLoginStatusAreaParagraph.innerHTML = "Logged in as: " + loggedInEmail;
+    } else {
+        emailLoginStatusAreaParagraph.innerHTML = "Error logging in";
+    }
+    console.log(data);
+}
+//</editor-fold>
 // <editor-fold defaultstate="collapsed" desc="Get Chat IDs">
 /**
  * Gather data and execute pre-request functions
@@ -156,7 +189,7 @@ function updateChatSuccess(json) {
 }
 //</editor-fold>
 
-// <editor-fold defaultstate="collapsed" desc="Get initial messages">
+// <editor-fold defaultstate="collapsed" desc="Get Initial Messages">
 function prepGetInitialMessages() {
     console.log("Getting initial messages");
     getInitialMessages(selectedChatID, 15);
@@ -320,25 +353,6 @@ function connectToChat() {
     });
 }
 //</editor-fold>
-
-function login() {
-    var email = document.getElementById('email').value;
-    var password = document.getElementById('password').value;
-    console.log("Logging in... " + email + " " + password);
-    $.ajax({
-        type: "POST", 
-        url: "/",
-        data : {
-			'function' : "login",
-            'email': email,
-            'password' : password
-        },
-        dataType: "json",
-        success: function(json) {
-            console.log(json);
-        }
-    });
-}
 
 function getMessages(chatID) {
     console.log("getting messages");
