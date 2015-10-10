@@ -26,6 +26,33 @@ function attemptLogin(email, password, callback) {
 }
 //</editor-fold>
 
+// </editor-fold defaultstate="collpased" desc="Attempt Signup"
+
+function attemptSignup(firstName, lastName, email, password, callback) {
+    console.log(firstName + " " + lastName + " " + email + " " + password);
+    $.ajax({
+        type: "POST",
+        url: "/",
+        data: {
+            'function': "signup",
+            'firstName': firstName,
+            'lastName': lastName,
+            'email': email,
+            'password': password
+        },
+        dataType: "json",
+        success: function(json) {
+            var data = convertToObject(json);
+            if(data.success) {
+                callback(data.success, data.error);
+            } else {
+                callback(data.success, data.response);
+            }
+        }
+    });
+}
+// </editor-fold>
+
 // <editor-fold defaultstate="collapsed" desc="Get Chat IDs">
 /**
  * Gets the chat IDs for the user assosiated with the set token
@@ -97,6 +124,37 @@ function getMessageRange(chatID, beginIndex, endIndex, callback) {
        }
     });
 }
+// </editor-fold>
+
+// <editor-fold defaultstate="collpased" desc="Send Message">
+
+/**
+ * Sends a messages to the specified chatID
+ * @param {String} chatID Chat to send message to
+ * @param {String} message Message to send to chat
+ * @returns 
+ */
+function sendMessage(chatID, message, callback) {
+    $.ajax({
+        type: "POST",
+        url: "/",
+        data: {'function': 'chat:send:message',
+            'token': token,
+            'chatID': chatID,
+            'message': message
+        },
+        dataType: "json",
+        success: function(json) {
+            var data = convertToObject(json);
+            if(data.success) {
+                callback(data.success, data.response, data.message);
+            } else {
+                callback(data.success, data.error, data.message);
+            }
+        }
+    });
+}
+
 // </editor-fold>
 //</editor-fold>
 

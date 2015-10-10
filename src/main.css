@@ -1,0 +1,15 @@
+#loginArea {
+	float: left;
+	margin: 10px;
+	margin-right: 50px;
+}
+
+#signupArea {
+	float: left;
+	margin: 10px;
+}
+
+#loginStatusArea {
+	margin-top: 10px;
+	margin-left: 10px;
+}

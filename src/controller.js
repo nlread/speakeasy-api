@@ -1,9 +1,10 @@
 /* global token */
 
 var loginStatsAreaId = "";
-var loginAreaId = "loginArea";
+var loginSignupAreaId = "loginAreaSignupArea";
 var chatSelectionAreaId = "chatSelectionArea";
 var chatAreaId = "chatArea";
+var messagesAreaId = "messagesArea";
 var chatSelectMenuId = "chatSelectionMenu";
 var chats;
 var loggedInEmail;
@@ -13,17 +14,18 @@ var currentChatId;
 var loadedMessages;
 var minIndex;
 var maxIndex;
+var socket;
 
 function init() {
     if (token === undefined) {
         setLoginStatus("Not logged in", "red");
-        setElementVisibility(loginAreaId, true);
+        setElementVisibility(loginSignupAreaId, true);
         setElementVisibility(chatSelectionAreaId, false);
         setElementVisibility(chatAreaId, false);
-        clearChatArea();
+        clearMessagesArea();
         clearChatSelectionArea();
     } else {
-        setElementVisibility(loginAreaId, false);
+        setElementVisibility(loginSignupAreaId, false);
         setElementVisibility(chatSelectionAreaId, true);
         setElementVisibility(chatAreaId, true);
         clearChatSelectionArea();
@@ -46,6 +48,12 @@ function login() {
             loggedInEmail = email;
             setLoginStatus("Logged in as: " + loggedInEmail, "green");
             init();
+            socket = io.connect('http://localhost:1337');
+            socket.on('newMessage', function(data) {
+                console.log(data);
+                addMessagesToBottomOfMessageArea([data.message], true);
+            });
+            socket.emit('set token',{'token' : token});
         } else {
             setLoginStatus("Error logging in", "red");
         }
@@ -62,20 +70,13 @@ function chatSelected() {
 
 function loadChat(chatId) {
     console.log("loading chat: " + chatId);
-    //clearChatArea();
+    clearChatArea();
     currentChatId = chatId;
     loadedMessages = {};
     getInitialMessages(chatId, 15, function (success, info, messages) {
         if (success) {
-            var chatArea = document.getElementById(chatAreaId);
-            for (var i = 0; i < messages.length; i++) {
-                var message = JSON.parse(messages[i]);
-                loadedMessages[message.index] = message;
-                
-                var messageDiv = createMessageDiv(message);
-                chatArea.appendChild(messageDiv);
-            }
             console.log(messages[0]);
+            addMessagesToBottomOfMessageArea(messages, true);
             minIndex = parseInt(JSON.parse(messages[0]).index);
             maxIndex = parseInt(JSON.parse(messages[14]).index);
         } else {
@@ -107,6 +108,19 @@ function loadMoreMessages(numMessages) {
     });
 }
 
+function prepSendMessage() {
+    var messageToSend = document.getElementById("message").value;
+    sendMessage(currentChatId, messageToSend, function(success, info, message) {
+        console.log(message);
+        if(success) {
+            maxIndex = maxIndex + 1;
+            addMessagesToBottomOfMessageArea([message], false);
+        } else {
+            console.log("Unable to send message: " + info);
+        }
+    });
+}
+
 function bindChatSelectMenu(chatIds) {
     chats = {};
     var chatSelectMenu = document.getElementById(chatSelectMenuId);
@@ -135,8 +149,8 @@ function setElementVisibility(elementId, visible) {
     }
 }
 
-function clearChatArea() {
-    document.getElementById(chatAreaId).innerHTML = "";
+function clearMessagesArea() {
+    document.getElementById(messagesAreaId).innerHTML = "";
 }
 
 function clearChatSelectionArea() {
@@ -154,4 +168,15 @@ function createMessageDiv(message) {
     var div = document.createElement("div");
     div.innerHTML = message.sender + ": " + message.message;
     return div;
+}
+
+function addMessagesToBottomOfMessageArea(messages, decode) {
+    var chatArea = document.getElementById(chatAreaId);
+    for (var i = 0; i < messages.length; i++) {
+        var message = decode ? JSON.parse(messages[i]) : messages[i];
+        loadedMessages[message.index] = message;
+
+        var messageDiv = createMessageDiv(message);
+        chatArea.appendChild(messageDiv);
+    }
 }

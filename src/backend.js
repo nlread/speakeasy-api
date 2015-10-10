@@ -20,7 +20,6 @@ server.listen(1337);
  * Handle requests to the server
  */
 function requestHandler(req, res) {
-	console.log("request recieved | " + req.method + " | " + req.url);
 	if(req.method === "POST") {
 		switch(req.url) {
 			//POST
@@ -46,7 +45,6 @@ function requestHandler(req, res) {
 
 function serveChatroomHTML(req, res) {
 	var filename = "chatroom.html";
-	console.log(req.url);
 	switch(req.url){
 		case('/'):
 			filename = "chatroom.html";
@@ -90,7 +88,6 @@ function ajaxRequestHandler(chunk, req, res) {
 		return;
 	} 
 	
-	console.log(data.function);
 	if (data.function === 'profile:info:chats') {
 		executeSecureFunction(data, req, res,prepGetChatIDs);
 	} else if (data.function === 'chat:retrieve:last') {
@@ -100,7 +97,6 @@ function ajaxRequestHandler(chunk, req, res) {
 	} else if(data.function === 'chat:send:message') {
 		executeSecureFunction(data, req, res, prepSendMessage);
 	} else if (data.funciton === 'login') {
-		console.log("dog");
 		login(data, req, res);
 	}
 }
@@ -131,7 +127,6 @@ function newConnection(socket) {
  * @param {Function} Function to call after getting id
  */
 function authenticate(token, callback) {
-	console.log("Authenticating with token: " + token);
 	var query = "SELECT `user_id` FROM `sessions` WHERE `token` = '" + token + "' LIMIT 1";
 	conn.query(query, function(error, rows, fields){
 		if(error) {
@@ -174,26 +169,32 @@ function prepSendMessage(data, req, res, id) {
 }
 
 function sendMessage(res, userID, message, chatID) {
-	getChatDataByChatID(chatID, function(error, rows) {
-		if(error) {
-			replyDatabaseError(res);
-			return;
-		}
-		if(rows.length === 0) {
-			replyChatNotFound(res);
-			return;
-		}
-		var chatData = rows[0];
-		//Current user not part of given chat
-		if(!(userID === chatData['user_one'] || userID === chatData['user_two'])) {
-			replyNoAccess(res);
-			return; 
-		}
-		
-		incrementChatMessagesAs(chatID, userID);
-		
-		var chatFilePath = getChatFilePath(chatID);
-		
+	getChatDataByChatIDValidate(res, userID, chatID, function(chatData) {
+
+		//Update chat meta data
+		incrementChatMessagesAs(chatID, userID, 1,function(success) {
+			if(!success) {
+				replyDatabaseError(res);
+				return;
+			}
+			var messageObject = {};
+			messageObject['index'] = chatData['num_messages'] + 1;
+			messageObject['message'] = message;
+			messageObject['sent'] = (new Date()).toDateString();
+			messageObject['sender'] = userID;
+			var messageEncoded = JSON.stringify(messageObject);
+			var filePath = getChatFilePath(chatID);
+			fs.appendFile(filePath, messageEncoded + '\n', function (err) {
+				if(err) {
+					console.log("error writing message " + err);
+				}
+			});
+			res.end('{"success":true, "response":"message sent", "message":' + messageEncoded + '}');
+			var otherUserID = chatData['user_one'] == userID ? chatData['user_two'] : chatData['user_one'];
+			if(idToClient[otherUserID] !== undefined) {
+				idToClient[otherUserID].emit('newMessage', {'chatID' : chatID, 'message' : messageEncoded});
+			}
+		});		
 	});
 }
 
@@ -259,9 +260,7 @@ function getChatDataByChatIDValidate(res, userID, chatID,successCallback) {
 function loadMessagesFromFile(filePath, start, end, callback) {
 	var lineNum = 1;
 	var messages = [];
-	console.log("start: " + start + " end: " + end);
 	lineReader.eachLine(filePath, function(line, last) {
-			console.log(lineNum);
 			if(lineNum >= start && lineNum <= end) {
 				messages.push(line);
 			}
@@ -391,6 +390,10 @@ function login(data, req, res) {
 	 res.end('{"success":false, "error":"user not found"}');
  }
  
+ function replyErrorWritingToFile(res) {
+	 res.end('{"success":false, "error":"unable to write to file"}');
+ }
+ 
  function connectToDatabase() {
 	var connection = mysql.createConnection({
   		host     : 'localhost',
@@ -428,14 +431,18 @@ function getChatFilePath(chatID) {
 /**
  * Increments the unread of the opposite user by amount, and the message count by amount. 
  */
-function incrementChatMessagesAs(chatID, userID, amount) {
+function incrementChatMessagesAs(chatID, userID, amount, callback) {
 	var query = "UPDATE `chats` SET `num_messages` = `num_messages` + " + amount + "," +
-									 "`unread_user_one` = CASE WHERE WHEN `user_two` = '" + userID + "' THEN `unread_user_one + " + amount + " ELSE `unread_user_one` END," +
+									 "`unread_user_one` = CASE WHEN `user_two` = '" + userID + "' THEN `unread_user_one` + " + amount + " ELSE `unread_user_one` END," +
 									 "`unread_user_two` = CASE WHEN `user_one` = '" + userID + "' THEN `unread_user_two` + " + amount + " ELSE `unread_user_two` END" + 
-									 "WHERE `chat_id` = '" + chatID + "' LIMIT 1";
+									 " WHERE `chat_id` = '" + chatID + "' LIMIT 1";
 	conn.query(query, function(error, rows, fields) {
 		if(error) {
 			console.log("error incrementing chat:\n\tchat: " + chatID + "\n\tas user: " + userID + "\n\tamount: " + amount);
+			console.log(error);
+			callback(false);
+		} else {
+			callback(true);
 		}
 	})
 }

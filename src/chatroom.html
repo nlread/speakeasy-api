@@ -4,38 +4,58 @@
 		<script src="/socket.io/socket.io.js"></script>
 		<script type="text/javascript" src="backendInterface.js"> </script>
 		<script type="text/javascript" src="controller.js"> </script>
-		<script type="text/javascript">
-			var socket;/*
-			function init() {
-				console.log("connecting");
-				socket = io.connect('http://localhost:1337', {"token" : token});
-			}*/
-			//init();
-		</script>
+		<link rel="stylesheet" type="text/css" href="main.css">
 	</head>
-	<body onload='init()'>'
-		<div><input type="button" onclick="init()">Init</input></div>
+	<body onload='init()'>
 		<div id="loginStatusArea" style="color:red">Not logged in</div>
-		<div id="loginArea">
-			<div id="emailTextBox">Email: <input id="email" type="text" /></div>
-			<div id="passwordTextBox">Password: <input id="password" type="password" /></div>
-			<div><input type="button" value="Login" onclick="login()" /></div>
+		<div id="loginAreaSignupArea">
+			<div id="loginArea">
+				<div id="emailTextBox">
+					Email: <input id="email" type="text" />
+				</div>
+				<div id="passwordTextBox">
+					Password: <input id="password" type="password" />
+				</div>
+				<div>
+					<input type="button" value="Login" onclick="login()" />
+				</div>
+			</div>
+			<div id="signupArea">
+				<div id="emailSignupTextBox">
+					First Name: <input id="firstNameSignup" type="text"/>
+				</div>
+				<div id="emailSignupTextBox">
+					Last Name: <input id="lastNameSignup" type="text"/>
+				</div>				
+				<div id="emailSignupTextBox">
+					Email: <input id="emailSignup" type="text"/>
+				</div>
+				<div>
+					Password: <input id="passwordSignupOne" type="password" />
+				</div>
+				<div>
+					Again: <input id="passwordSignupTwo" type="password" />
+				</div>
+				<div>
+					<input type="button" value="Signup" id="signupButton" onclick="prepSignup()" />
+				</div>
+			</div>
 		</div>
 		<div id="chatSelectionArea" onchange="chatSelected()">
 			<select id="chatSelectionMenu">
 				<option value='dog'>Dog</option>
-			</select></div>
-		<div>
-		<input type="button" value="Load More" onclick="loadMoreMessages(5)" />
-		<div id="chatArea" style="overflow:auto; height=50px">
+			</select>
 		</div>
-		</div>
-		<br />
-		<br />
-		<div> <input type="button" onclick="testAJAX()" value="Send AJAX" /> </div>
-		<div style="visibility:hidden">
-		You shouldn't see this...
-		</div>
-		
+		<div id="chatArea">
+			<div id="loadMoreButton">
+				<input type="button" value="Load More" onclick="loadMoreMessages(5)" />
+			</div>
+			<div id="messagesArea" style="overflow:auto; height=50px">
+			</div>
+			<div>
+				<input type="text" id="message"/>
+				<input type="button" value="Send" onclick="prepSendMessage()"/>
+			</div>
+		</div>		
 	</body>
 </html>
