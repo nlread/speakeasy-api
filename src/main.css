@@ -1,15 +1,52 @@
+/* Login Status Area */
+#loginStatusArea {
+	margin-top: 10px;
+	margin-bottom: 10px;
+	margin-left: 10px;
+}
+
+/* Login/Signup Area */
+#loginAreaSignupArea {
+	margin-left: 10px;
+	margin-right: 10px;
+	margin-bottom: 10px;
+}
 #loginArea {
 	float: left;
-	margin: 10px;
-	margin-right: 50px;
 }
 
 #signupArea {
 	float: left;
-	margin: 10px;
+	margin-left: 50px; 
 }
 
-#loginStatusArea {
+/* Chat Management Area */
+#chatManagementArea {
+	margin-left: 10px;
+}
+#chatSelectionArea{
+	margin-right: 10px;
+	float: left;
+}
+
+#chatCreationArea {
+	margin-left: 10px;
+}
+
+#rowOne {
+	clear:both;
+}
+
+#loadMoreButton {
+	margin-bottom: 10px;
+	float: none;
+}
+
+/* Chat Area */
+#sendMessageArea {
 	margin-top: 10px;
+}
+
+#chatArea {
 	margin-left: 10px;
 }

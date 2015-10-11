@@ -37,22 +37,33 @@
 					Again: <input id="passwordSignupTwo" type="password" />
 				</div>
 				<div>
-					<input type="button" value="Signup" id="signupButton" onclick="prepSignup()" />
+					<input type="button" value="Signup" id="signupButton" onclick="signup()" />
 				</div>
 			</div>
 		</div>
-		<div id="chatSelectionArea" onchange="chatSelected()">
-			<select id="chatSelectionMenu">
-				<option value='dog'>Dog</option>
-			</select>
-		</div>
+                <div id="chatManagementArea">
+                    <div id="rowOne">
+                        <div id="chatSelectionArea" onchange="chatSelected()">
+                                <select id="chatSelectionMenu">
+                                        <option value='dog'>Dog</option>
+                                </select>
+                        </div>
+                        <div id="chatCreationArea">
+                            Create new chat: <input type="text" />
+                            <div id="createChatStatusArea">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="rowTwo">
+                        <div id="loadMoreButton">
+                            <input type="button" value="Load More" onclick="loadMoreMessages(5)" />
+                        </div>
+                    </div>
+                </div>
 		<div id="chatArea">
-			<div id="loadMoreButton">
-				<input type="button" value="Load More" onclick="loadMoreMessages(5)" />
+			<div id="messagesArea" style="overflow:auto; height:500px">
 			</div>
-			<div id="messagesArea" style="overflow:auto; height=50px">
-			</div>
-			<div>
+			<div id="sendMessageArea">
 				<input type="text" id="message"/>
 				<input type="button" value="Send" onclick="prepSendMessage()"/>
 			</div>

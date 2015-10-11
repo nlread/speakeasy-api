@@ -5,6 +5,7 @@ var fs			= require('fs');
 var mysql		= require('mysql');
 var queryString	= require('querystring');
 var lineReader  = require('line-reader'); //Might need to move to function
+var util = require('util');
 var conn = connectToDatabase();
 conn.connect(function(error) {
 	if(error) 	{ console.log("Unable to connect to database");}
@@ -22,18 +23,12 @@ server.listen(1337);
 function requestHandler(req, res) {
 	if(req.method === "POST") {
 		switch(req.url) {
-			//POST
-			case('backendDB.php'):
+			case('/backendDB.php'):
 			case('/'):
 				req.on('data', function(chunk){
 					ajaxRequestHandler(chunk, req, res);
 				});
 				break;
-			//POST via form
-			case('/formhandler'):
-				res.end("Not supported");
-				break;
-			//GET
 			default:
 				res.end("Not supported");
 		}
@@ -58,6 +53,9 @@ function serveChatroomHTML(req, res) {
 		case('/backendInterface.js'):
 			filename = "backendInterface.js";
 			break;
+		case('/main.css'):
+			filename = "main.css";
+			break;
 	}
 	fs.readFile(filename, function(err, data) {
 		if(!err) {
@@ -80,6 +78,9 @@ function ajaxRequestHandler(chunk, req, res) {
 	if(data.function == "login") {
 		login(data, req, res);
 		return;
+	} else if(data.function == "signup") {
+		signup(data, req, res);
+		return;
 	}
 	
 	if(data.token === undefined) {
@@ -96,9 +97,7 @@ function ajaxRequestHandler(chunk, req, res) {
 		executeSecureFunction(data, req, res, prepGetMessageRange)
 	} else if(data.function === 'chat:send:message') {
 		executeSecureFunction(data, req, res, prepSendMessage);
-	} else if (data.funciton === 'login') {
-		login(data, req, res);
-	}
+	} 
 }
 
 /**
@@ -366,6 +365,45 @@ function login(data, req, res) {
 	});
 }
 
+function signup(data, req, res) {
+	console.log("user signing up");
+	console.log(data);
+	if(!isRequiredSet(data, ['firstName','lastName','email','password'])) {
+		replyMissingInputs(res);
+		return;
+	}
+	
+	var firstName = data['firstName'];
+	var lastName = data['lastName'];
+	var email = data['email'];
+	var password = data['password'];
+	
+	var existingAccountQuery = util.format("SELECT `email` FROM `profiles` WHERE `email` = '%s' LIMIT 1",email);
+	conn.query(existingAccountQuery, function(error, rows, fields) {
+		if(error) {
+			console.log("Error checking for existing account: " + error);
+			replyDatabaseError(res);
+			return;
+		}
+		if(rows.length !== 0) {
+			replyAlreadyRegistered(res);
+			return;
+		}
+		
+		var userID = generateUUID();
+		var insertAccountQuery = util.format("INSERT INTO `profiles` (`id`, `first_name`, `last_name`, `email`, `password`) VALUES ('%s', '%s', '%s', '%s', '%s')", userID, firstName, lastName, email, password);
+		conn.query(insertAccountQuery, function(error, rows, fields) {
+			if(error) {
+				console.log("Error adding account to database: " + error);
+				replyDatabaseError(res);
+				return;
+			} else {
+				res.end('{"success":true, "response": "account created"}');
+			}
+		});
+	});
+}
+
 /**
  * ----- UTILITY FUNCTIONS -----
  */
@@ -392,6 +430,10 @@ function login(data, req, res) {
  
  function replyErrorWritingToFile(res) {
 	 res.end('{"success":false, "error":"unable to write to file"}');
+ }
+ 
+ function replyAlreadyRegistered(res) {
+	 res.end('{"success":false, "error":"account already registered"}')
  }
  
  function connectToDatabase() {

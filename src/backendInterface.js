@@ -44,9 +44,9 @@ function attemptSignup(firstName, lastName, email, password, callback) {
         success: function(json) {
             var data = convertToObject(json);
             if(data.success) {
-                callback(data.success, data.error);
-            } else {
                 callback(data.success, data.response);
+            } else {
+                callback(data.success, data.error);
             }
         }
     });

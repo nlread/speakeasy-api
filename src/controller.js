@@ -2,6 +2,7 @@
 
 var loginStatsAreaId = "";
 var loginSignupAreaId = "loginAreaSignupArea";
+var chatManagementAreaId = "chatManagementArea";
 var chatSelectionAreaId = "chatSelectionArea";
 var chatAreaId = "chatArea";
 var messagesAreaId = "messagesArea";
@@ -20,13 +21,13 @@ function init() {
     if (token === undefined) {
         setLoginStatus("Not logged in", "red");
         setElementVisibility(loginSignupAreaId, true);
-        setElementVisibility(chatSelectionAreaId, false);
+        setElementVisibility(chatManagementAreaId, false);
         setElementVisibility(chatAreaId, false);
         clearMessagesArea();
         clearChatSelectionArea();
     } else {
         setElementVisibility(loginSignupAreaId, false);
-        setElementVisibility(chatSelectionAreaId, true);
+        setElementVisibility(chatManagementAreaId, true);
         setElementVisibility(chatAreaId, true);
         clearChatSelectionArea();
         getChatIDs(function (data) {
@@ -49,13 +50,28 @@ function login() {
             setLoginStatus("Logged in as: " + loggedInEmail, "green");
             init();
             socket = io.connect('http://localhost:1337');
-            socket.on('newMessage', function(data) {
+            socket.on('newMessage', function (data) {
                 console.log(data);
                 addMessagesToBottomOfMessageArea([data.message], true);
+                scrollToBottomOfChat();
             });
-            socket.emit('set token',{'token' : token});
+            socket.emit('set token', {'token': token});
         } else {
             setLoginStatus("Error logging in", "red");
+        }
+    });
+}
+
+function signup() {
+    var firstName = document.getElementById('firstNameSignup').value;
+    var lastName = document.getElementById('lastNameSignup').value;
+    var email = document.getElementById('emailSignup').value;
+    var password = document.getElementById('passwordSignupOne').value;
+    attemptSignup(firstName, lastName, email, password, function (success, info) {
+        if (success) {
+            setLoginStatus(info, "green");
+        } else {
+            setLoginStatus(info, "red");
         }
     });
 }
@@ -70,15 +86,15 @@ function chatSelected() {
 
 function loadChat(chatId) {
     console.log("loading chat: " + chatId);
-    clearChatArea();
+    clearMessagesArea();
     currentChatId = chatId;
     loadedMessages = {};
     getInitialMessages(chatId, 15, function (success, info, messages) {
         if (success) {
             console.log(messages[0]);
             addMessagesToBottomOfMessageArea(messages, true);
-            minIndex = parseInt(JSON.parse(messages[0]).index);
-            maxIndex = parseInt(JSON.parse(messages[14]).index);
+            minIndex = messages.length === 0 ? 0 : parseInt(JSON.parse(messages[0]).index);
+            maxIndex = messages.length === 0 ? 0 : parseInt(JSON.parse(messages[14]).index);
         } else {
             console.log("Unable to load messages: " + info);
         }
@@ -93,28 +109,29 @@ function loadMoreMessages(numMessages) {
             console.log("error loading more messages : " + info);
             return;
         }
-        var chatArea = document.getElementById(chatAreaId);
-        var oldMessages = chatArea.innerHTML;
-        chatArea.innerHTML = "";
+        var messagesArea = document.getElementById(messagesAreaId);
+        var oldMessages = messagesArea.innerHTML;
+        messagesArea.innerHTML = "";
         for (var i = 0; i < messages.length; i = i + 1) {
             var message = JSON.parse(messages[i]);
             loadedMessages[message.index] = message;
             var messageDiv = createMessageDiv(message);
-            chatArea.appendChild(messageDiv);
+            messagesArea.appendChild(messageDiv);
         }
-        chatArea.innerHTML += oldMessages;
-        
-        minIndex = JSON.parse(messages[0]).index;
+        messagesArea.innerHTML += oldMessages;
+
+        minIndex = messages.length === 0 ? 0 : JSON.parse(messages[0]).index;
     });
 }
 
 function prepSendMessage() {
     var messageToSend = document.getElementById("message").value;
-    sendMessage(currentChatId, messageToSend, function(success, info, message) {
+    sendMessage(currentChatId, messageToSend, function (success, info, message) {
         console.log(message);
-        if(success) {
+        if (success) {
             maxIndex = maxIndex + 1;
             addMessagesToBottomOfMessageArea([message], false);
+            scrollToBottomOfChat();
         } else {
             console.log("Unable to send message: " + info);
         }
@@ -171,12 +188,17 @@ function createMessageDiv(message) {
 }
 
 function addMessagesToBottomOfMessageArea(messages, decode) {
-    var chatArea = document.getElementById(chatAreaId);
+    var messagesArea = document.getElementById(messagesAreaId);
     for (var i = 0; i < messages.length; i++) {
         var message = decode ? JSON.parse(messages[i]) : messages[i];
         loadedMessages[message.index] = message;
 
         var messageDiv = createMessageDiv(message);
-        chatArea.appendChild(messageDiv);
+        messagesArea.appendChild(messageDiv);
     }
+}
+
+function scrollToBottomOfChat() {
+    var messagesArea = document.getElementById(messagesAreaId);
+    messagesArea.scrollTop = messagesArea.scrollHeight;
 }
