@@ -33,6 +33,10 @@
 	margin-left: 10px;
 }
 
+#createChatStatusArea {
+	margin-left: -10px;
+}
+
 #rowOne {
 	clear:both;
 }

@@ -7,6 +7,7 @@ var chatSelectionAreaId = "chatSelectionArea";
 var chatAreaId = "chatArea";
 var messagesAreaId = "messagesArea";
 var chatSelectMenuId = "chatSelectionMenu";
+var createChatStatusAreaId = "createChatStatusArea";
 var chats;
 var loggedInEmail;
 var token;
@@ -82,7 +83,10 @@ function createChat() {
     attemptCreateChat(otherEmail, function(success, info, chatID) {
         if(success) {
             chats.push(chatID);
+            setCreateChatStatus(info, "green");
             bindChatSelectMenu(currentChatId);
+        } else {
+            setCreateChatStatus(info, "red");
         }
     });
 }
@@ -150,8 +154,9 @@ function prepSendMessage() {
 }
 
 function bindChatSelectMenu(chatToSelect) {
+    
     var chatSelectMenu = document.getElementById(chatSelectMenuId);
-
+    chatSelectMenu.innerHTML = "";
     var option = document.createElement("option");
     option.value = "null";
     option.innerHTML = "--- Select a Chat ---";
@@ -198,6 +203,12 @@ function setLoginStatus(text, color) {
     var loginStatus = document.getElementById('loginStatusArea');
     loginStatus.style.color = color;
     loginStatus.innerHTML = text;
+}
+
+function setCreateChatStatus(text, color) {
+    var createChatStatusDiv = document.getElementById(createChatStatusAreaId);
+    createChatStatusDiv.innerHTML = text;
+    createChatStatusDiv.style.color = color;
 }
 
 function createMessageDiv(message) {

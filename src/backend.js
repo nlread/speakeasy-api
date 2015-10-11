@@ -261,7 +261,8 @@ function getChatDataByChatIDValidate(res, userID, chatID,successCallback) {
 function loadMessagesFromFile(filePath, start, end, callback) {
 	var lineNum = 1;
 	var messages = [];
-	console.log("fetching emssages");
+	var callbackTriggered = false;
+	console.log("fetching messages: " + filePath);
 	lineReader.eachLine(filePath, function(line, last) {
 		console.log(lineNum);
 		if(lineNum >= start && lineNum <= end) {
@@ -270,9 +271,15 @@ function loadMessagesFromFile(filePath, start, end, callback) {
 		if(last || lineNum >= end) {
 			console.log("done fetching");
 			callback(messages);
+			callbackTriggered = true;
 			return false;
 		}
 		lineNum += 1;
+	}).then(function (error) {
+		console.log(error);
+		if(!callbackTriggered) {
+			callback(messages);
+		}
 	});
 }
 
