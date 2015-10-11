@@ -1,0 +1,1 @@
+contains each chats. Each .chat file has one line per message. Each message stored in json with timestamp, sender userid, and message text. 
