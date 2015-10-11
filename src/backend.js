@@ -97,7 +97,9 @@ function ajaxRequestHandler(chunk, req, res) {
 		executeSecureFunction(data, req, res, prepGetMessageRange)
 	} else if(data.function === 'chat:send:message') {
 		executeSecureFunction(data, req, res, prepSendMessage);
-	} 
+	} else if(data.function === 'createChat') {
+		executeSecureFunction(data, req, res, createChat);
+	}
 }
 
 /**
@@ -259,16 +261,19 @@ function getChatDataByChatIDValidate(res, userID, chatID,successCallback) {
 function loadMessagesFromFile(filePath, start, end, callback) {
 	var lineNum = 1;
 	var messages = [];
+	console.log("fetching emssages");
 	lineReader.eachLine(filePath, function(line, last) {
-			if(lineNum >= start && lineNum <= end) {
-				messages.push(line);
-			}
-			if(last || lineNum >= end) {
-				callback(messages);
-				return false;
-			}
-			lineNum += 1;
-		});
+		console.log(lineNum);
+		if(lineNum >= start && lineNum <= end) {
+			messages.push(line);
+		}
+		if(last || lineNum >= end) {
+			console.log("done fetching");
+			callback(messages);
+			return false;
+		}
+		lineNum += 1;
+	});
 }
 
 function replyWithMessagesFromFile(res, filePath, start, end) {
@@ -404,6 +409,54 @@ function signup(data, req, res) {
 	});
 }
 
+function createChat(data, req, res, userID) {
+	if(!isRequiredSet(data, ['otherEmail'])) {
+		replyMissingInputs(res);
+		return;
+	}
+	var otherEmail = data['otherEmail'];
+	var validOtherEmailQuery = util.format("SELECT `id` FROM `profiles` WHERE `email` = '%s'", otherEmail);
+	conn.query(validOtherEmailQuery, function(error, rows, fields) {
+		if(error) {
+			console.log("Error validating other email " + error);
+			replyDatabaseError(res);
+			return;
+		}
+		if(rows.length === 0) {
+			replyUserNotFound(res);
+			return;
+		}
+		
+		var otherID = rows[0]['id'];
+		var chatNotCreatedQuery = util.format("SELECT `chat_id` FROM `chats` WHERE (`user_one` = '%s' AND `user_two` = '%s') OR (`user_one` = '%s' AND `user_two` = '%s') LIMIT 1", userID, otherID, otherID, userID);		
+		conn.query(chatNotCreatedQuery, function(error, rows, fields) {
+			if(error) {
+				console.log("Error checking for existing chat " + error);
+				replyDatabaseError(res);
+				return;
+			}
+			if(rows.length !== 0) {
+				replyChatAlreadyExists(res);
+				return;
+			}
+			
+			var chatID = generateUUID();
+			var chatInsertQuery = util.format("INSERT INTO `chats` (`chat_id`, `user_one`, `user_two`) VALUES ('%s', '%s', '%s')", chatID, userID, otherID);
+			conn.query(chatInsertQuery, function(error, rows, fields){
+				if(error) {
+					console.log("Error creating chat " + error);
+					replyUserNotFound(res);
+					return;
+				}
+				var filePath = getChatFilePath(chatID);
+				fs.closeSync(fs.openSync(filePath, 'w'));
+				res.end(util.format('{"success":true, "response":"chat created", "newChatID":"%s"}', chatID));
+			});
+		});
+	});1
+
+}1
+
 /**
  * ----- UTILITY FUNCTIONS -----
  */
@@ -434,6 +487,10 @@ function signup(data, req, res) {
  
  function replyAlreadyRegistered(res) {
 	 res.end('{"success":false, "error":"account already registered"}')
+ }
+ 
+ function replyChatAlreadyExists(res) {
+	 res.end('{"success":false, "error":"chat already exists"}');
  }
  
  function connectToDatabase() {

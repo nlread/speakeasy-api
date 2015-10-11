@@ -34,7 +34,8 @@ function init() {
             if (data.success === false) {
                 console.log("Error getting chats");
             } else {
-                bindChatSelectMenu(data.chatIDs);
+                chats = data.chatIDs;
+                bindChatSelectMenu();
             }
         });
     }
@@ -72,6 +73,16 @@ function signup() {
             setLoginStatus(info, "green");
         } else {
             setLoginStatus(info, "red");
+        }
+    });
+}
+
+function createChat() {
+    var otherEmail = document.getElementById('emailChatCreate').value;
+    attemptCreateChat(otherEmail, function(success, info, chatID) {
+        if(success) {
+            chats.push(chatID);
+            bindChatSelectMenu(currentChatId);
         }
     });
 }
@@ -138,8 +149,7 @@ function prepSendMessage() {
     });
 }
 
-function bindChatSelectMenu(chatIds) {
-    chats = {};
+function bindChatSelectMenu(chatToSelect) {
     var chatSelectMenu = document.getElementById(chatSelectMenuId);
 
     var option = document.createElement("option");
@@ -147,11 +157,20 @@ function bindChatSelectMenu(chatIds) {
     option.innerHTML = "--- Select a Chat ---";
     chatSelectMenu.appendChild(option);
 
-    for (var i = 0; i < chatIds.length; i++) {
+    for (var i = 0; i < chats.length; i++) {
         var option = document.createElement("option");
-        option.value = chatIds[i];
-        option.innerHTML = chatIds[i];
+        option.value = chats[i];
+        option.innerHTML = chats[i];
         chatSelectMenu.appendChild(option);
+    }
+    
+    if(chatToSelect !== undefined) {
+        for (var i = 0; i < chatSelectMenu.options.length; i++) {
+        if (chatSelectMenu.options[i].text === valueToSet) {
+            chatSelectMenu.options[i].selected = true;
+            break;
+        }
+    }
     }
 }
 

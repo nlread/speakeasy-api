@@ -14,8 +14,8 @@ function prepLogin() {
     login(email, password);
 }
 function login(email, password) {
-    console.log("" + email + " " + password);
-    $.ajax({
+    console.log("" + email + " " + password);   
+    $.ajax({    
         type: "POST", 
         url: "/",
         data : {

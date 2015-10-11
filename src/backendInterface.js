@@ -26,7 +26,7 @@ function attemptLogin(email, password, callback) {
 }
 //</editor-fold>
 
-// </editor-fold defaultstate="collpased" desc="Attempt Signup"
+// <editor-fold defaultstate="collpased" desc="Attempt Signup">
 
 function attemptSignup(firstName, lastName, email, password, callback) {
     console.log(firstName + " " + lastName + " " + email + " " + password);
@@ -156,6 +156,31 @@ function sendMessage(chatID, message, callback) {
 }
 
 // </editor-fold>
+
+// <editor-fold>
+
+function attemptCreateChat(otherEmail, callback) {
+    $.ajax({
+        type: "POST",
+        url: "/",
+        data: { 
+            'function': 'createChat',
+            'token': token,
+            'otherEmail': otherEmail
+        },
+        dataType: "json",
+        success: function(json) {
+            var data = convertToObject(json);
+            if(data.success) {
+                callback(data.success, data.response, data.newChatID);
+            } else {
+                callback(data.success, data.error, null);
+            }
+        }
+    });
+}
+// </editor-fold>
+
 //</editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="Utility Functions">
